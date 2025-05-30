@@ -5,11 +5,14 @@ import {
   RekognitionClient,
   CreateFaceLivenessSessionCommand,
   GetFaceLivenessSessionResultsCommand,
+  GetFaceLivenessSessionResultsCommandOutput,
 } from "@aws-sdk/client-rekognition";
 import { fetchAuthSession } from "aws-amplify/auth";
 
 export function LivenessQuickStartReact() {
   const [loading, setLoading] = React.useState<boolean>(true);
+  const [result, setResult] =
+    React.useState<GetFaceLivenessSessionResultsCommandOutput | null>(null);
   const [createLivenessApiData, setCreateLivenessApiData] = React.useState<{
     sessionId: string;
   } | null>(null);
@@ -88,10 +91,10 @@ export function LivenessQuickStartReact() {
       const response = await rekognitionClient.send(getLivenessResultsCommand);
 
       console.log("response", response);
+      setResult(response);
     } catch (error) {
       console.error("Error verifying liveness result:", error);
     }
-    return;
   };
 
   return (
@@ -99,19 +102,28 @@ export function LivenessQuickStartReact() {
       {loading ? (
         <Loader />
       ) : (
-        <FaceLivenessDetector
-          sessionId={createLivenessApiData?.sessionId || ""}
-          region="us-east-1"
-          onUserCancel={() => {
-            console.log("On user cancel");
-          }}
-          onAnalysisComplete={handleAnalysisComplete}
-          onError={(error) => {
-            setLoading(false);
-            console.log("On error", error);
-          }}
-          displayText={{ faceDistanceHeaderText: "Your face" }}
-        />
+        <div>
+          {result ? (
+            <div>
+              <div>{`status:${result?.Status}`}</div>
+              <div>{`confidence:${result.Confidence}`}</div>
+            </div>
+          ) : (
+            <FaceLivenessDetector
+              sessionId={createLivenessApiData?.sessionId || ""}
+              region="us-east-1"
+              onUserCancel={() => {
+                console.log("On user cancel");
+              }}
+              onAnalysisComplete={handleAnalysisComplete}
+              onError={(error) => {
+                setLoading(false);
+                console.log("On error", error);
+              }}
+              displayText={{ faceDistanceHeaderText: "Your face" }}
+            />
+          )}
+        </div>
       )}
     </ThemeProvider>
   );
